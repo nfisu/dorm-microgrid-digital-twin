@@ -4,7 +4,7 @@ A full-stack digital twin that simulates a student residence's energy system —
 
 Built as a personal learning project to explore energy systems modeling, optimization, and full-stack Python development.
 
-![Dashboard Screenshot](dashboard_screenshot.png)
+![Dashboard Screenshot](dashboard_screenshot_alberta.png)
 
 ---
 
@@ -35,8 +35,9 @@ Two pricing scenarios were tested, since the value of optimization depends heavi
 | PyPSA linear optimization | $97.62 |
 | **Savings** | **0.9%** |
 
+![Mild Pricing Dashboard](dashboard_screenshot_mild.png)
 ![Mild Pricing Result](dorm_optimization_result_mild.png)
-*Battery response under mild, flat time-of-use pricing — a modest, steady discharge during the evening peak.*
+*Dashboard and battery response under mild, flat time-of-use pricing — a modest, steady discharge during the evening peak.*
 
 **Alberta-market-inspired pricing** (modeled after real AESO pool price volatility patterns — sharp overnight lows around $0.02/kWh and evening spikes up to $0.52/kWh; *not* actual AESO data):
 
@@ -46,18 +47,22 @@ Two pricing scenarios were tested, since the value of optimization depends heavi
 | PyPSA linear optimization | **$81.08** |
 | **Savings** | **18.1%** |
 
+![Alberta Pricing Dashboard](dashboard_screenshot_alberta.png)
 ![Alberta Pricing Result](dorm_optimization_result_alberta.png)
-*Battery response under Alberta-market-inspired pricing — note the discharge dropping grid draw right at the evening price spike.*
+*Dashboard and battery response under Alberta-market-inspired pricing — note the discharge dropping grid draw right at the evening price spike.*
 
 The gap between the two scenarios is the real finding here: the hand-written rules barely reacted to the more volatile pricing (a flat "discharge 20 kWh if price ≥ $0.20" rule can't distinguish a mild $0.20 hour from a severe $0.52 one). The optimizer, by contrast, reshaped its entire strategy — charging more aggressively overnight to exploit the lower off-peak floor, and fully discharging its 50 kW capacity in the single hour that mattered most. This matches how real battery storage economics work: the more volatile the market, the more valuable smart dispatch becomes.
 
 ## Architecture
+
+```
 ┌─────────────────┐     ┌──────────────┐     ┌───────────────┐     ┌─────────────┐
 │  Synthetic Data  │ --> │    PyPSA     │ --> │   FastAPI     │ --> │  Streamlit  │
 │  (pandas, CSV)   │     │ (HiGHS solver)│     │  (live API)   │     │ (dashboard) │
 └─────────────────┘     └──────────────┘     └───────────────┘     └─────────────┘
-load / solar /         optimal battery       telemetry +           KPI cards,
-price profiles          dispatch plan       control endpoints    charts, controls
+   load / solar /         optimal battery       telemetry +           KPI cards,
+   price profiles          dispatch plan       control endpoints    charts, controls
+```
 
 **Data layer:** Hourly load, solar, and price profiles generated with `pandas`, saved as CSV.
 
@@ -106,6 +111,8 @@ streamlit run dashboard.py
 Then open `http://localhost:8501` in your browser. Make sure the FastAPI server (Terminal 2) is running before starting the dashboard.
 
 ## Project structure
+
+```
 microgrid_twin/
 ├── data/
 │   └── dorm_day1.csv       # load/solar/price data (current: Alberta-inspired pricing)
@@ -115,8 +122,10 @@ microgrid_twin/
 ├── dashboard.py               # Streamlit dashboard
 ├── dorm_optimization_result_mild.png
 ├── dorm_optimization_result_alberta.png
-├── dashboard_screenshot.png
+├── dashboard_screenshot_mild.png
+├── dashboard_screenshot_alberta.png
 └── requirements.txt
+```
 
 ## What I learned
 
