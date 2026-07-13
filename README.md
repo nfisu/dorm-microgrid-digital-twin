@@ -18,19 +18,35 @@ This project simulates that decision-making process — first by hand, then by l
 
 ## What it does
 
-1. **Simulates** a fictional BC student dorm's hourly electricity load, solar generation, and grid electricity prices over a 24-hour period.
+1. **Simulates** a fictional BC student dorm's hourly electricity load, solar generation, and grid electricity prices over a 24-hour period. Pricing is synthetic but modeled after the volatility patterns of Alberta's real wholesale electricity market (AESO pool price) — not literal historical data.
 2. **Optimizes** a battery charge/discharge schedule using linear programming to minimize total electricity cost, subject to real physical constraints (battery capacity, charge/discharge efficiency, power limits).
 3. **Serves** that schedule live through a FastAPI backend that behaves like a simplified SCADA system — reporting current state, advancing through simulated time, and accepting manual operator overrides.
 4. **Visualizes** everything in an interactive Streamlit dashboard with KPI cards, time-series charts, and live controls.
 
 ## Results
 
+Two pricing scenarios were tested, since the value of optimization depends heavily on how volatile electricity prices are.
+
+**Mild synthetic pricing** (flat time-of-use bands, $0.08–$0.22/kWh):
+
 | Strategy | Total Daily Cost |
 |---|---|
 | Hand-written rule-based battery logic | $98.54 |
-| PyPSA linear optimization | **$97.62** |
+| PyPSA linear optimization | $97.62 |
+| **Savings** | **0.9%** |
 
-The optimizer found a strategy the hand-written rules didn't: charging the battery from cheap overnight grid power (not just excess solar), then discharging it precisely during the single most expensive hour of the day. With this project's relatively mild price swings, the saving is modest (~1%) — but it demonstrates real price arbitrage behavior that simple heuristics miss, and the gap would widen significantly with more volatile real-world pricing (e.g. Alberta's wholesale electricity market).
+**Alberta-market-inspired pricing** (modeled after real AESO pool price volatility patterns — sharp overnight lows around $0.02/kWh and evening spikes up to $0.52/kWh; *not* actual AESO data):
+
+| Strategy | Total Daily Cost |
+|---|---|
+| Hand-written rule-based battery logic | $98.94 |
+| PyPSA linear optimization | **$81.08** |
+| **Savings** | **18.1%** |
+
+The gap between the two scenarios is the real finding here: the hand-written rules barely reacted to the more volatile pricing (a flat "discharge 20 kWh if price ≥ $0.20" rule can't distinguish a mild $0.20 hour from a severe $0.52 one). The optimizer, by contrast, reshaped its entire strategy — charging more aggressively overnight to exploit the lower off-peak floor, and fully discharging its 50 kW capacity in the single hour that mattered most. This matches how real battery storage economics work: the more volatile the market, the more valuable smart dispatch becomes.
+
+![Optimization Result Chart](dorm_optimization_result.png)
+*Battery response under Alberta-market-inspired pricing — note the discharge dropping grid draw right at the evening price spike.*
 
 ![Optimization Result Chart](dorm_optimization_result.png)
 
@@ -116,10 +132,14 @@ This was my first time working with linear optimization, power systems modeling,
 
 ## Possible next steps
 
-- Swap in real hourly wholesale price data (e.g. Alberta's AESO pool price) to show a more dramatic cost comparison
+- Replace the Alberta-inspired synthetic pricing with actual historical AESO pool price data for a fully real-data result
+- Swap synthetic solar and load profiles for real data (NREL NSRDB for irradiance, OpenEI for building load profiles)
 - Add a second scenario (a cloudy day, or a high-demand exam week) to demonstrate the optimizer adapting to different conditions
+- Add forecasting (even a simple model) instead of giving the optimizer perfect foresight of the full day
+- Extend to a multi-objective formulation (cost + carbon emissions) rather than cost alone
 - Persist the optimization results to a database instead of re-solving on every API server restart
 - Extend the network to multiple buildings on a shared campus microgrid
+- Containerize with Docker for one-command setup (`docker compose up`)
 
 ---
 
