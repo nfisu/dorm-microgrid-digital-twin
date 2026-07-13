@@ -19,12 +19,13 @@ solar_kw = [
     2, 0, 0, 0, 0, 0          # 6pm - 11pm (dark again)
 ]
 
-# Electricity price ($/kWh): cheaper at night, expensive during evening peak demand
+# Alberta-market-inspired synthetic price ($/kWh)
+# Modeled after real AESO pool price volatility patterns - NOT actual AESO data
 price = [
-    0.08, 0.08, 0.08, 0.08, 0.08, 0.08,   # 12am - 5am (off-peak)
-    0.10, 0.12, 0.12, 0.10, 0.10, 0.10,   # 6am - 11am (mid)
-    0.10, 0.10, 0.10, 0.10, 0.12, 0.15,   # 12pm - 5pm (mid, rising)
-    0.20, 0.22, 0.20, 0.15, 0.10, 0.08    # 6pm - 11pm (peak, then falling)
+    0.025, 0.022, 0.020, 0.020, 0.022, 0.028,   # 12am-5am: low overnight, ~$20-28/MWh
+    0.045, 0.065, 0.055, 0.040, 0.035, 0.032,   # 6am-11am: morning ramp
+    0.030, 0.030, 0.032, 0.038, 0.060, 0.120,   # 12pm-5pm: mild, rising into evening
+    0.350, 0.520, 0.280, 0.090, 0.045, 0.030    # 6pm-11pm: severe evening peak spike
 ]
 
 # Combine all three into one table
